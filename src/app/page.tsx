@@ -9,9 +9,10 @@ import ItemGrid from "@/components/ItemGrid";
 import ItemDetail from "@/components/ItemDetail";
 import OutfitBuilder from "@/components/OutfitBuilder";
 import OutfitCard from "@/components/OutfitCard";
+import PhotoOutfitAnalyzer from "@/components/PhotoOutfitAnalyzer";
 import type { Item } from "@/components/ItemGrid";
 
-type Tab = "library" | "outfits";
+type Tab = "library" | "outfits" | "analyze";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -180,6 +181,16 @@ export default function Home() {
         >
           Outfits
         </button>
+        <button
+          onClick={() => setTab("analyze")}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === "analyze"
+              ? "bg-neutral-800 text-white"
+              : "text-neutral-400 hover:text-white"
+          }`}
+        >
+          Analyze photo
+        </button>
       </div>
 
       {/* Library tab */}
@@ -293,6 +304,16 @@ export default function Home() {
             </div>
           )}
         </>
+      )}
+
+      {/* Analyze photo tab */}
+      {tab === "analyze" && (
+        <div className="max-w-lg mx-auto">
+          <p className="text-sm text-neutral-400 mb-4">
+            Upload a photo of a full outfit — we'll analyze the look, extract colors, identify items, and match them to your library.
+          </p>
+          <PhotoOutfitAnalyzer />
+        </div>
       )}
 
       {/* Outfit builder modal */}
