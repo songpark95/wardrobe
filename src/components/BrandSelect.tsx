@@ -93,16 +93,15 @@ export default function BrandSelect({
             onClick={(e) => e.stopPropagation()}
           >
             {brand.name}
-            <button
-              type="button"
+            <span
               onClick={(e) => {
                 e.stopPropagation();
                 removeBrand(brand.id);
               }}
-              className="hover:text-neutral-300"
+              className="cursor-pointer hover:text-neutral-300"
             >
               <X size={12} />
-            </button>
+            </span>
           </span>
         ))}
         <ChevronDown
