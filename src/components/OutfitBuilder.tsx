@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { X, Sparkles, Shirt, Check, Plus } from "lucide-react";
+import { X, Sparkles, Shirt, Check, Plus, Download } from "lucide-react";
+import CollageExport from "./CollageExport";
 import type { Item } from "./ItemGrid";
 
 interface OutfitBuilderProps {
@@ -25,6 +26,9 @@ export default function OutfitBuilder({ onClose, onSaved }: OutfitBuilderProps) 
 
   // For collage generation
   const [selectedPhotoUrls, setSelectedPhotoUrls] = useState<Record<string, string>>({});
+  const [bgRemovedUrls, setBgRemovedUrls] = useState<Record<string, string>>({});
+  const [removingBgs, setRemovingBgs] = useState(false);
+  const [bgProgress, setBgProgress] = useState(0);
 
   const supabase = createClient();
 
@@ -110,6 +114,43 @@ export default function OutfitBuilder({ onClose, onSaved }: OutfitBuilderProps) 
       console.error("Analysis failed:", err);
     }
     setAnalyzing(false);
+  }
+
+  async function removeBackgrounds() {
+    if (selectedIds.length < 2) return;
+    setRemovingBgs(true);
+    setBgProgress(0);
+
+    try {
+      const { removeBackground, blobToUrl } = await import("@/lib/removeBackground");
+      const newUrls: Record<string, string> = { ...bgRemovedUrls };
+      let processed = 0;
+
+      for (const itemId of selectedIds) {
+        const photoUrl = selectedPhotoUrls[itemId];
+        if (!photoUrl || bgRemovedUrls[itemId]) {
+          processed++;
+          setBgProgress(Math.round((processed / selectedIds.length) * 100));
+          continue;
+        }
+
+        try {
+          const blob = await removeBackground(photoUrl);
+          newUrls[itemId] = blobToUrl(blob);
+          processed++;
+          setBgProgress(Math.round((processed / selectedIds.length) * 100));
+        } catch (err) {
+          console.error(`BG removal failed for ${itemId}:`, err);
+          processed++;
+          setBgProgress(Math.round((processed / selectedIds.length) * 100));
+        }
+      }
+
+      setBgRemovedUrls(newUrls);
+    } catch (err) {
+      console.error("Background removal failed:", err);
+    }
+    setRemovingBgs(false);
   }
 
   async function saveOutfit() {
@@ -272,6 +313,27 @@ export default function OutfitBuilder({ onClose, onSaved }: OutfitBuilderProps) 
             </button>
           )}
 
+          {/* Remove backgrounds button */}
+          {selectedIds.length >= 2 && (
+            <button
+              type="button"
+              onClick={removeBackgrounds}
+              disabled={removingBgs || Object.keys(bgRemovedUrls).length === selectedIds.length}
+              className="w-full py-2 bg-neutral-800 border border-neutral-700 text-sm rounded-lg hover:bg-neutral-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            >
+              {removingBgs ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-neutral-400 border-t-white rounded-full animate-spin" />
+                  Removing backgrounds... {bgProgress}%
+                </>
+              ) : Object.keys(bgRemovedUrls).length === selectedIds.length ? (
+                "✓ Backgrounds removed"
+              ) : (
+                "Remove backgrounds for cleaner collage"
+              )}
+            </button>
+          )}
+
           {/* Results */}
           {(mood || palette.length > 0 || outfitName) && (
             <div className="space-y-4 border-t border-neutral-800 pt-4">
@@ -315,35 +377,19 @@ export default function OutfitBuilder({ onClose, onSaved }: OutfitBuilderProps) 
                 </div>
               )}
 
-              {/* Collage preview */}
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-2 font-medium">
-                  Collage
-                </p>
-                <div className={`grid ${gridCols} gap-2 bg-neutral-950 rounded-lg p-4`}>
-                  {selectedItems.map((item, idx) => (
-                    <div key={item.id} className="relative">
-                      {selectedPhotoUrls[item.id] ? (
-                        <img
-                          src={selectedPhotoUrls[item.id]}
-                          alt=""
-                          className="w-full aspect-[3/4] object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-full aspect-[3/4] bg-neutral-800 rounded-lg flex items-center justify-center">
-                          <Shirt size={20} className="text-neutral-600" />
-                        </div>
-                      )}
-                      {palette[idx] && (
-                        <div
-                          className="absolute bottom-2 left-2 right-2 h-1 rounded-full"
-                          style={{ backgroundColor: palette[idx] }}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Collage preview with download */}
+              <CollageExport
+                items={selectedItems.map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                  photo: bgRemovedUrls[item.id] || selectedPhotoUrls[item.id] || "",
+                  category: item.category,
+                  color: item.color,
+                }))}
+                palette={palette}
+                outfitName={outfitName}
+                mood={mood}
+              />
 
               {/* Details */}
               <div className="grid grid-cols-2 gap-3">
