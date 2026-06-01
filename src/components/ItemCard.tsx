@@ -1,16 +1,24 @@
 "use client";
 
 import { Tag, MapPin, Ruler } from "lucide-react";
+import HeartButton from "./HeartButton";
 import type { Item } from "./ItemGrid";
 
 interface ItemCardProps {
   item: Item;
   primaryPhoto: string | null;
+  isFavorite: boolean;
+  onFavoriteToggle: (itemId: string, isFavorite: boolean) => void;
 }
 
-export default function ItemCard({ item, primaryPhoto }: ItemCardProps) {
+export default function ItemCard({
+  item,
+  primaryPhoto,
+  isFavorite,
+  onFavoriteToggle,
+}: ItemCardProps) {
   return (
-    <div className="group bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 hover:border-neutral-600 transition-all">
+    <div className="group bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 hover:border-neutral-600 transition-all relative">
       {/* Photo */}
       <div className="aspect-[3/4] bg-neutral-800 overflow-hidden">
         {primaryPhoto ? (
@@ -26,6 +34,15 @@ export default function ItemCard({ item, primaryPhoto }: ItemCardProps) {
         )}
       </div>
 
+      {/* Heart button — top right */}
+      <div className="absolute top-2 right-2">
+        <HeartButton
+          itemId={item.id}
+          isFavorite={isFavorite}
+          onToggle={onFavoriteToggle}
+        />
+      </div>
+
       {/* Info */}
       <div className="p-3 space-y-2">
         {item.name && (
@@ -39,7 +56,6 @@ export default function ItemCard({ item, primaryPhoto }: ItemCardProps) {
               {item.category}
             </span>
           )}
-          {/* Multiple brands */}
           {item.brands && item.brands.length > 0 && (
             <div className="flex flex-wrap gap-1 w-full mt-1">
               {item.brands.map((b) => (
