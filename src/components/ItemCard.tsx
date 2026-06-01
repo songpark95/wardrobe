@@ -39,8 +39,18 @@ export default function ItemCard({ item, primaryPhoto }: ItemCardProps) {
               {item.category}
             </span>
           )}
-          {item.brand && (
-            <span className="text-xs text-neutral-400">{item.brand}</span>
+          {/* Multiple brands */}
+          {item.brands && item.brands.length > 0 && (
+            <div className="flex flex-wrap gap-1 w-full mt-1">
+              {item.brands.map((b) => (
+                <span
+                  key={b.id}
+                  className="text-[10px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded"
+                >
+                  {b.name}
+                </span>
+              ))}
+            </div>
           )}
         </div>
 
@@ -55,6 +65,16 @@ export default function ItemCard({ item, primaryPhoto }: ItemCardProps) {
           <div className="flex items-center gap-1 text-xs text-neutral-500">
             <Ruler size={10} />
             {item.size}
+          </div>
+        )}
+
+        {/* Price */}
+        {item.purchase_price && (
+          <div className="text-xs text-neutral-500">
+            ${Number(item.purchase_price).toFixed(2)}
+            {item.price_modifier && (
+              <span className="text-neutral-600"> — {item.price_modifier}</span>
+            )}
           </div>
         )}
       </div>
